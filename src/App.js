@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Settings, CheckCircle, XCircle } from 'lucide-react';
+import { Analytics } from "@vercel/analytics/react"
 
 const GuitarPracticeApp = () => {
   const [selectedStrings, setSelectedStrings] = useState([1, 2, 3, 4, 5, 6]);
@@ -350,6 +351,7 @@ const GuitarPracticeApp = () => {
           </a>
         </div>
       </div>
+      <Analytics />
     </div>
   );
 };
