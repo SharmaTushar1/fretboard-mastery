@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings, CheckCircle, XCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, CheckCircle, XCircle, Volume2, VolumeX } from 'lucide-react';
 import { Analytics } from "@vercel/analytics/react"
+import * as Tone from 'tone';
 
 const GuitarPracticeApp = () => {
   const [selectedStrings, setSelectedStrings] = useState([1, 2, 3, 4, 5, 6]);
@@ -14,10 +15,13 @@ const GuitarPracticeApp = () => {
   const [difficulty, setDifficulty] = useState('beginner');
   const [showSettings, setShowSettings] = useState(false);
   const [awaitingUserResponse, setAwaitingUserResponse] = useState(false);
-  const [gameState, setGameState] = useState('idle'); // 'idle', 'playing', 'ended'
+  const [gameState, setGameState] = useState('idle');
   const [gameStartTime, setGameStartTime] = useState(null);
   const [gameEndTime, setGameEndTime] = useState(null);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [audioInitialized, setAudioInitialized] = useState(false);
   const timerRef = useRef(null);
+  const synthRef = useRef(null);
 
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   
@@ -68,10 +72,86 @@ const GuitarPracticeApp = () => {
     return positions;
   };
 
+  const initializeAudio = async () => {
+    if (!audioInitialized && audioEnabled) {
+      try {
+        await Tone.start();
+        synthRef.current = new Tone.Synth({
+          oscillator: {
+            type: "fatsawtooth"
+          },
+          envelope: {
+            attack: 0.01,
+            decay: 0.2,
+            sustain: 0.3,
+            release: 0.8
+          }
+        }).toDestination();
+        setAudioInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize audio:', error);
+      }
+    }
+  };
+
+  const getNoteFrequency = (note, octave = 4) => {
+    const noteFrequencies = {
+      'C': 261.63,
+      'C#': 277.18,
+      'D': 293.66,
+      'D#': 311.13,
+      'E': 329.63,
+      'F': 349.23,
+      'F#': 369.99,
+      'G': 392.00,
+      'G#': 415.30,
+      'A': 440.00,
+      'A#': 466.16,
+      'B': 493.88
+    };
+    
+    const baseFreq = noteFrequencies[note];
+    const octaveMultiplier = Math.pow(2, octave - 4);
+    return baseFreq * octaveMultiplier;
+  };
+
+  const getGuitarOctave = (string, fret) => {
+    const stringOctaves = {
+      6: 2, // Low E
+      5: 2, // A
+      4: 3, // D
+      3: 3, // G
+      2: 3, // B
+      1: 4  // High E
+    };
+    
+    const baseOctave = stringOctaves[string];
+    const octaveOffset = Math.floor(fret / 12);
+    return baseOctave + octaveOffset;
+  };
+
+  const playNote = async (note, string, fret) => {
+    if (!audioEnabled) return;
+    
+    await initializeAudio();
+    
+    if (synthRef.current && audioInitialized) {
+      try {
+        const octave = getGuitarOctave(string, fret);
+        const frequency = getNoteFrequency(note, octave);
+        
+        const noteWithOctave = `${note}${octave}`;
+        
+        synthRef.current.triggerAttackRelease(noteWithOctave, "0.8n");
+      } catch (error) {
+        console.error('Failed to play note:', error);
+      }
+    }
+  };
+
   const generateChallenge = () => {
     if (selectedStrings.length === 0) return;
     
-    // Start the game if it's not already started
     if (gameState === 'idle') {
       setGameState('playing');
       setGameStartTime(new Date());
@@ -84,7 +164,7 @@ const GuitarPracticeApp = () => {
     });
     
     if (availableStrings.length === 0) {
-      generateChallenge(); // Try again
+      generateChallenge();
       return;
     }
     
@@ -99,6 +179,16 @@ const GuitarPracticeApp = () => {
     setAwaitingUserResponse(false);
     setTimeLeft(difficultySettings[difficulty].time);
     setIsActive(true);
+
+    setTimeout(() => {
+      playNote(randomNote, randomString, randomPosition.fret);
+    }, 500);
+  };
+
+  const replayCurrentNote = () => {
+    if (currentNote && currentString !== '' && currentFret !== '') {
+      playNote(currentNote, currentString, currentFret);
+    }
   };
 
   const handleStringToggle = (string) => {
@@ -252,6 +342,35 @@ const GuitarPracticeApp = () => {
           <div className="bg-black/30 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/20">
             <h3 className="text-white font-semibold mb-3">Settings</h3>
             
+            {/* Audio Settings */}
+            <div className="mb-4">
+              <label className="text-white/80 text-sm block mb-2">Audio</label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAudioEnabled(!audioEnabled)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    audioEnabled
+                      ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                      : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                  }`}
+                >
+                  {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                  {audioEnabled ? 'Audio On' : 'Audio Off'}
+                </button>
+                {audioEnabled && currentNote && (
+                  <button
+                    onClick={replayCurrentNote}
+                    className="px-3 py-2 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                  >
+                    🔊 Replay
+                  </button>
+                )}
+              </div>
+              <div className="text-xs text-white/60 mt-1">
+                Ear training: Listen to the target note while you find it
+              </div>
+            </div>
+
             {/* Difficulty */}
             <div className="mb-4">
               <label className="text-white/80 text-sm block mb-2">Difficulty</label>
@@ -312,9 +431,20 @@ const GuitarPracticeApp = () => {
                 {/* Current Challenge */}
                 <div className="text-center mb-6">
                   <div className="text-6xl font-bold text-white mb-2">{currentNote}</div>
-                  <div className="text-xl text-white/80 mb-4">
+                  <div className="text-xl text-white/80 mb-2">
                     Play on {stringNames[currentString]}
                   </div>
+                  
+                  {/* Audio Controls */}
+                  {audioEnabled && (
+                    <button
+                      onClick={replayCurrentNote}
+                      className="mb-4 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 mx-auto"
+                    >
+                      <Volume2 size={16} />
+                      Replay Note
+                    </button>
+                  )}
                   
                   {/* Timer */}
                   <div className="relative w-20 h-20 mx-auto mb-4">

@@ -50,7 +50,7 @@ const GuitarPracticeApp = () => {
   };
 
   const findNotePossitions = (note, strings) => {
-    const positions = [];
+    const positions: { string: number; fret: number }[] = [];
     const maxFret = difficultySettings[difficulty].maxFret;
     
     strings.forEach(string => {
