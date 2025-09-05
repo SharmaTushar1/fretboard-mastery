@@ -20,8 +20,10 @@ const GuitarPracticeApp = () => {
   const [gameEndTime, setGameEndTime] = useState(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [audioInitialized, setAudioInitialized] = useState(false);
+  const [isGeneratingChallenge, setIsGeneratingChallenge] = useState(false);
   const timerRef = useRef(null);
   const synthRef = useRef(null);
+  const nextChallengeTimeoutRef = useRef(null);
 
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   
@@ -223,17 +225,31 @@ const GuitarPracticeApp = () => {
   };
 
   const handleCorrect = () => {
+    if (isGeneratingChallenge) return; // Prevent double triggering
+    
     setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
     setIsActive(false);
     setAwaitingUserResponse(false);
-    setTimeout(() => generateChallenge(), 1500);
+    setIsGeneratingChallenge(true);
+    
+    nextChallengeTimeoutRef.current = setTimeout(() => {
+      setIsGeneratingChallenge(false);
+      generateChallenge();
+    }, 1500);
   };
 
   const handleIncorrect = () => {
+    if (isGeneratingChallenge) return; // Prevent double triggering
+    
     setScore(prev => ({ correct: prev.correct, total: prev.total + 1 }));
     setIsActive(false);
     setAwaitingUserResponse(false);
-    setTimeout(() => generateChallenge(), 1500);
+    setIsGeneratingChallenge(true);
+    
+    nextChallengeTimeoutRef.current = setTimeout(() => {
+      setIsGeneratingChallenge(false);
+      generateChallenge();
+    }, 1500);
   };
 
   useEffect(() => {
@@ -280,8 +296,12 @@ const GuitarPracticeApp = () => {
     setAwaitingUserResponse(false);
     setGameStartTime(null);
     setGameEndTime(null);
+    setIsGeneratingChallenge(false);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (nextChallengeTimeoutRef.current) {
+      clearTimeout(nextChallengeTimeoutRef.current);
     }
   };
 
@@ -556,17 +576,25 @@ const GuitarPracticeApp = () => {
             <div className="flex gap-3">
               <button
                 onClick={async () => {
+                  if (isGeneratingChallenge) return; // Prevent during transition
+                  
+                  // Clear any pending timeouts
+                  if (nextChallengeTimeoutRef.current) {
+                    clearTimeout(nextChallengeTimeoutRef.current);
+                    setIsGeneratingChallenge(false);
+                  }
+                  
                   // Trigger audio initialization on first user interaction
                   if (audioEnabled && !audioInitialized) {
                     await initializeAudio();
                   }
                   generateChallenge();
                 }}
-                disabled={selectedStrings.length === 0}
+                disabled={selectedStrings.length === 0 || isGeneratingChallenge}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Play size={20} />
-                {currentNote ? 'Next Note' : 'Start Practice'}
+                {isGeneratingChallenge ? 'Loading...' : (currentNote ? 'Next Note' : 'Start Practice')}
               </button>
               
               {isActive && (
