@@ -310,12 +310,26 @@ const GuitarPracticeApp = () => {
             <div className="text-sm">
               Score: {score.correct}/{score.total} ({getAccuracy()}%)
             </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <Settings size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Audio Toggle Button */}
+              <button
+                onClick={() => setAudioEnabled(!audioEnabled)}
+                className={`p-2 rounded-lg transition-colors ${
+                  audioEnabled
+                    ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                    : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                }`}
+                title={audioEnabled ? 'Audio On - Click to disable' : 'Audio Off - Click to enable'}
+              >
+                {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              </button>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <Settings size={20} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -460,13 +474,26 @@ const GuitarPracticeApp = () => {
                   
                   {/* Audio Controls */}
                   {audioEnabled && (
-                    <button
-                      onClick={replayCurrentNote}
-                      className="mb-4 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 mx-auto"
-                    >
-                      <Volume2 size={16} />
-                      Replay Note
-                    </button>
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <button
+                        onClick={replayCurrentNote}
+                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Volume2 size={16} />
+                        Replay Note
+                      </button>
+                      <div className="text-xs text-white/50">
+                        🎧 Listen & Learn
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!audioEnabled && (
+                    <div className="text-center mb-4">
+                      <div className="text-xs text-white/50 bg-orange-500/20 rounded-lg px-3 py-2 inline-block">
+                        🔇 Audio disabled - Enable in header to hear notes
+                      </div>
+                    </div>
                   )}
                   
                   {/* Timer */}
