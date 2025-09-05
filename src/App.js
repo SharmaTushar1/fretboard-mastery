@@ -14,6 +14,9 @@ const GuitarPracticeApp = () => {
   const [difficulty, setDifficulty] = useState('beginner');
   const [showSettings, setShowSettings] = useState(false);
   const [awaitingUserResponse, setAwaitingUserResponse] = useState(false);
+  const [gameState, setGameState] = useState('idle'); // 'idle', 'playing', 'ended'
+  const [gameStartTime, setGameStartTime] = useState(null);
+  const [gameEndTime, setGameEndTime] = useState(null);
   const timerRef = useRef(null);
 
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -67,6 +70,12 @@ const GuitarPracticeApp = () => {
 
   const generateChallenge = () => {
     if (selectedStrings.length === 0) return;
+    
+    // Start the game if it's not already started
+    if (gameState === 'idle') {
+      setGameState('playing');
+      setGameStartTime(new Date());
+    }
     
     const randomNote = notes[Math.floor(Math.random() * notes.length)];
     const availableStrings = selectedStrings.filter(string => {
@@ -136,6 +145,44 @@ const GuitarPracticeApp = () => {
     setScore({ correct: 0, total: 0 });
   };
 
+  const endGame = () => {
+    setGameState('ended');
+    setGameEndTime(new Date());
+    setIsActive(false);
+    setAwaitingUserResponse(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+  };
+
+  const startNewGame = () => {
+    setGameState('idle');
+    setScore({ correct: 0, total: 0 });
+    setCurrentNote('');
+    setCurrentString('');
+    setCurrentFret('');
+    setTimeLeft(0);
+    setIsActive(false);
+    setShowAnswer(false);
+    setAwaitingUserResponse(false);
+    setGameStartTime(null);
+    setGameEndTime(null);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+  };
+
+  const getGameDuration = () => {
+    if (!gameStartTime || !gameEndTime) return 0;
+    return Math.round((gameEndTime - gameStartTime) / 1000);
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const getAccuracy = () => {
     return score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
   };
@@ -158,6 +205,47 @@ const GuitarPracticeApp = () => {
             </button>
           </div>
         </div>
+
+        {/* Game End Summary */}
+        {gameState === 'ended' && (
+          <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20 text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">🎉 Game Complete!</h2>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-green-500/20 rounded-lg p-4">
+                <div className="text-3xl font-bold text-green-400">{score.correct}</div>
+                <div className="text-sm text-white/80">Correct Notes</div>
+              </div>
+              <div className="bg-blue-500/20 rounded-lg p-4">
+                <div className="text-3xl font-bold text-blue-400">{score.total}</div>
+                <div className="text-sm text-white/80">Total Attempts</div>
+              </div>
+              <div className="bg-purple-500/20 rounded-lg p-4">
+                <div className="text-3xl font-bold text-purple-400">{getAccuracy()}%</div>
+                <div className="text-sm text-white/80">Accuracy</div>
+              </div>
+              <div className="bg-orange-500/20 rounded-lg p-4">
+                <div className="text-3xl font-bold text-orange-400">{formatTime(getGameDuration())}</div>
+                <div className="text-sm text-white/80">Duration</div>
+              </div>
+            </div>
+
+            <div className="text-white/60 mb-4">
+              {getAccuracy() >= 90 ? "🔥 Excellent work!" :
+               getAccuracy() >= 75 ? "👏 Great job!" :
+               getAccuracy() >= 60 ? "👍 Good effort!" :
+               "💪 Keep practicing!"}
+            </div>
+
+            <button
+              onClick={startNewGame}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Play size={20} />
+              Start New Game
+            </button>
+          </div>
+        )}
 
         {/* Settings Panel */}
         {showSettings && (
@@ -217,102 +305,114 @@ const GuitarPracticeApp = () => {
         )}
 
         {/* Main Practice Area */}
-        <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 border border-white/20">
-          {currentNote ? (
-            <>
-              {/* Current Challenge */}
-              <div className="text-center mb-6">
-                <div className="text-6xl font-bold text-white mb-2">{currentNote}</div>
-                <div className="text-xl text-white/80 mb-4">
-                  Play on {stringNames[currentString]}
-                </div>
-                
-                {/* Timer */}
-                <div className="relative w-20 h-20 mx-auto mb-4">
-                  <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
-                  <div 
-                    className="absolute inset-0 rounded-full border-4 border-blue-400 border-t-transparent transition-all duration-1000 ease-linear"
-                    style={{
-                      transform: `rotate(${((difficultySettings[difficulty].time - timeLeft) / difficultySettings[difficulty].time) * 360}deg)`
-                    }}
-                  ></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{timeLeft}</span>
+        {gameState !== 'ended' && (
+          <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            {currentNote ? (
+              <>
+                {/* Current Challenge */}
+                <div className="text-center mb-6">
+                  <div className="text-6xl font-bold text-white mb-2">{currentNote}</div>
+                  <div className="text-xl text-white/80 mb-4">
+                    Play on {stringNames[currentString]}
                   </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              {awaitingUserResponse && (
-                <div className="flex gap-3 mb-4">
-                  <button
-                    onClick={handleCorrect}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={20} />
-                    Got it!
-                  </button>
-                  <button
-                    onClick={handleIncorrect}
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <XCircle size={20} />
-                    Missed it
-                  </button>
-                </div>
-              )}
-
-              {/* Show Answer */}
-              {(showAnswer || timeLeft === 0) && (
-                <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                  <div className="text-center text-white">
-                    <div className="text-lg font-semibold mb-2">Answer:</div>
-                    <div className="text-2xl font-bold">
-                      {currentNote} is at fret {currentFret} on the {stringNames[currentString]}
+                  
+                  {/* Timer */}
+                  <div className="relative w-20 h-20 mx-auto mb-4">
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+                    <div 
+                      className="absolute inset-0 rounded-full border-4 border-blue-400 border-t-transparent transition-all duration-1000 ease-linear"
+                      style={{
+                        transform: `rotate(${((difficultySettings[difficulty].time - timeLeft) / difficultySettings[difficulty].time) * 360}deg)`
+                      }}
+                    ></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">{timeLeft}</span>
                     </div>
-                    {currentFret === 0 && (
-                      <div className="text-sm text-white/80 mt-1">(Open string)</div>
-                    )}
                   </div>
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center">
-              <div className="text-white/60 mb-4">Ready to practice?</div>
-            </div>
-          )}
 
-          {/* Control Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={generateChallenge}
-              disabled={selectedStrings.length === 0}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Play size={20} />
-              {currentNote ? 'Next Note' : 'Start Practice'}
-            </button>
-            
-            {isActive && (
+                {/* Action Buttons */}
+                {awaitingUserResponse && (
+                  <div className="flex gap-3 mb-4">
+                    <button
+                      onClick={handleCorrect}
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={20} />
+                      Got it!
+                    </button>
+                    <button
+                      onClick={handleIncorrect}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={20} />
+                      Missed it
+                    </button>
+                  </div>
+                )}
+
+                {/* Show Answer */}
+                {(showAnswer || timeLeft === 0) && (
+                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                    <div className="text-center text-white">
+                      <div className="text-lg font-semibold mb-2">Answer:</div>
+                      <div className="text-2xl font-bold">
+                        {currentNote} is at fret {currentFret} on the {stringNames[currentString]}
+                      </div>
+                      {currentFret === 0 && (
+                        <div className="text-sm text-white/80 mt-1">(Open string)</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center">
+                <div className="text-white/60 mb-4">Ready to practice?</div>
+              </div>
+            )}
+
+            {/* Control Buttons */}
+            <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setIsActive(false);
-                  setShowAnswer(true);
-                }}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                onClick={generateChallenge}
+                disabled={selectedStrings.length === 0}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                Show Answer
+                <Play size={20} />
+                {currentNote ? 'Next Note' : 'Start Practice'}
               </button>
+              
+              {isActive && (
+                <button
+                  onClick={() => {
+                    setIsActive(false);
+                    setShowAnswer(true);
+                    setAwaitingUserResponse(true);
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                >
+                  Show Answer
+                </button>
+              )}
+
+              {gameState === 'playing' && (
+                <button
+                  onClick={endGame}
+                  className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                >
+                  End Game
+                </button>
+              )}
+            </div>
+
+            {selectedStrings.length === 0 && (
+              <div className="text-center text-red-300 text-sm mt-3">
+                Please select at least one string to practice
+              </div>
             )}
           </div>
-
-          {selectedStrings.length === 0 && (
-            <div className="text-center text-red-300 text-sm mt-3">
-              Please select at least one string to practice
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Quick Stats */}
         {score.total > 0 && (
