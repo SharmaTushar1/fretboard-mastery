@@ -323,9 +323,10 @@ const GuitarPracticeApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
       <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="text-center mb-6">
+        {/* Header with SEO-friendly structure */}
+        <header className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">🎸 Fretboard Master</h1>
+          <p className="text-white/60 text-sm mb-4">Master guitar fretboard with interactive practice sessions</p>
           <div className="flex justify-between items-center text-white/80">
             <div className="text-sm">
               Score: {score.correct}/{score.total} ({getAccuracy()}%)
@@ -340,25 +341,27 @@ const GuitarPracticeApp = () => {
                     : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
                 }`}
                 title={audioEnabled ? 'Audio On - Click to disable' : 'Audio Off - Click to enable'}
+                aria-label={audioEnabled ? 'Disable audio' : 'Enable audio'}
               >
                 {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </button>
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Open settings"
               >
                 <Settings size={20} />
               </button>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Game End Summary */}
         {gameState === 'ended' && (
-          <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20 text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">🎉 Game Complete!</h2>
+          <section className="bg-black/30 backdrop-blur-md rounded-xl p-6 mb-6 border border-white/20 text-center" aria-labelledby="game-results">
+            <h2 id="game-results" className="text-2xl font-bold text-white mb-4">🎉 Guitar Practice Session Complete!</h2>
             
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-6" role="group" aria-label="Practice session statistics">
               <div className="bg-green-500/20 rounded-lg p-4">
                 <div className="text-3xl font-bold text-green-400">{score.correct}</div>
                 <div className="text-sm text-white/80">Correct Notes</div>
@@ -378,30 +381,31 @@ const GuitarPracticeApp = () => {
             </div>
 
             <div className="text-white/60 mb-4">
-              {getAccuracy() >= 90 ? "🔥 Excellent work!" :
-               getAccuracy() >= 75 ? "👏 Great job!" :
-               getAccuracy() >= 60 ? "👍 Good effort!" :
-               "💪 Keep practicing!"}
+              {getAccuracy() >= 90 ? "🔥 Excellent guitar fretboard mastery!" :
+               getAccuracy() >= 75 ? "👏 Great guitar practice session!" :
+               getAccuracy() >= 60 ? "👍 Good guitar note recognition!" :
+               "💪 Keep practicing your fretboard skills!"}
             </div>
 
             <button
               onClick={startNewGame}
               className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              aria-label="Start new guitar practice session"
             >
               <Play size={20} />
-              Start New Game
+              Start New Practice Session
             </button>
-          </div>
+          </section>
         )}
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="bg-black/30 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/20">
-            <h3 className="text-white font-semibold mb-3">Settings</h3>
+          <section className="bg-black/30 backdrop-blur-md rounded-xl p-4 mb-6 border border-white/20" aria-labelledby="practice-settings">
+            <h3 id="practice-settings" className="text-white font-semibold mb-3">Guitar Practice Settings</h3>
             
             {/* Audio Settings */}
             <div className="mb-4">
-              <label className="text-white/80 text-sm block mb-2">Audio</label>
+              <label className="text-white/80 text-sm block mb-2">Audio Training</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAudioEnabled(!audioEnabled)}
@@ -410,6 +414,7 @@ const GuitarPracticeApp = () => {
                       ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
                       : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
                   }`}
+                  aria-pressed={audioEnabled}
                 >
                   {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                   {audioEnabled ? 'Audio On' : 'Audio Off'}
@@ -418,35 +423,41 @@ const GuitarPracticeApp = () => {
                   <button
                     onClick={replayCurrentNote}
                     className="px-3 py-2 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                    aria-label="Replay current note"
                   >
                     🔊 Replay
                   </button>
                 )}
               </div>
               <div className="text-xs text-white/60 mt-1">
-                Ear training: Listen to the target note while you find it
+                Ear training: Listen to the target note while you find it on the fretboard
               </div>
             </div>
 
             {/* Difficulty */}
             <div className="mb-4">
-              <label className="text-white/80 text-sm block mb-2">Difficulty</label>
+              <label htmlFor="difficulty-select" className="text-white/80 text-sm block mb-2">Guitar Practice Difficulty</label>
               <select
+                id="difficulty-select"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full bg-white/10 text-white rounded-lg p-2 border border-white/30"
+                aria-describedby="difficulty-help"
               >
-                <option value="beginner">Beginner (8s, 0-5 frets)</option>
-                <option value="intermediate">Intermediate (6s, 0-12 frets)</option>
-                <option value="advanced">Advanced (4s, 0-15 frets)</option>
-                <option value="expert">Expert (3s, 0-22 frets)</option>
+                <option value="beginner">Beginner (8s, frets 0-5)</option>
+                <option value="intermediate">Intermediate (6s, frets 0-12)</option>
+                <option value="advanced">Advanced (4s, frets 0-15)</option>
+                <option value="expert">Expert (3s, frets 0-22)</option>
               </select>
+              <div id="difficulty-help" className="text-xs text-white/60 mt-1">
+                Choose your guitar skill level for appropriate fretboard challenges
+              </div>
             </div>
 
             {/* String Selection */}
             <div className="mb-4">
-              <label className="text-white/80 text-sm block mb-2">Practice Strings</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="text-white/80 text-sm block mb-2">Guitar Strings to Practice</label>
+              <div className="grid grid-cols-2 gap-2" role="group" aria-label="Select guitar strings for practice">
                 {[6, 5, 4, 3, 2, 1].map(string => (
                   <button
                     key={string}
@@ -456,6 +467,8 @@ const GuitarPracticeApp = () => {
                         ? 'bg-blue-500 text-white'
                         : 'bg-white/10 text-white/60 hover:bg-white/20'
                     }`}
+                    aria-pressed={selectedStrings.includes(string)}
+                    aria-label={`Toggle ${stringNames[string]} string practice`}
                   >
                     {stringNames[string]}
                   </button>
@@ -467,29 +480,33 @@ const GuitarPracticeApp = () => {
               <button
                 onClick={() => setSelectedStrings([1, 2, 3, 4, 5, 6])}
                 className="px-3 py-1 bg-green-500/20 text-green-300 rounded text-sm hover:bg-green-500/30 transition-colors"
+                aria-label="Select all guitar strings for practice"
               >
-                Select All
+                Select All Strings
               </button>
               <button
                 onClick={resetScore}
                 className="px-3 py-1 bg-red-500/20 text-red-300 rounded text-sm hover:bg-red-500/30 transition-colors"
+                aria-label="Reset practice score"
               >
                 Reset Score
               </button>
             </div>
-          </div>
+          </section>
         )}
 
         {/* Main Practice Area */}
         {gameState !== 'ended' && (
-          <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 border border-white/20">
+          <main className="bg-black/30 backdrop-blur-md rounded-xl p-6 border border-white/20" role="main" aria-labelledby="practice-area">
+            <h2 id="practice-area" className="sr-only">Guitar Fretboard Practice Area</h2>
+            
             {currentNote ? (
               <>
                 {/* Current Challenge */}
                 <div className="text-center mb-6">
-                  <div className="text-6xl font-bold text-white mb-2">{currentNote}</div>
+                  <div className="text-6xl font-bold text-white mb-2" role="img" aria-label={`Find note ${currentNote}`}>{currentNote}</div>
                   <div className="text-xl text-white/80 mb-2">
-                    Play on {stringNames[currentString]}
+                    Find this note on {stringNames[currentString]}
                   </div>
                   
                   {/* Audio Controls */}
@@ -498,6 +515,7 @@ const GuitarPracticeApp = () => {
                       <button
                         onClick={replayCurrentNote}
                         className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                        aria-label="Replay the target note sound"
                       >
                         <Volume2 size={16} />
                         Replay Note
@@ -517,7 +535,7 @@ const GuitarPracticeApp = () => {
                   )}
                   
                   {/* Timer */}
-                  <div className="relative w-20 h-20 mx-auto mb-4">
+                  <div className="relative w-20 h-20 mx-auto mb-4" role="timer" aria-label={`Time remaining: ${timeLeft} seconds`}>
                     <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
                     <div 
                       className="absolute inset-0 rounded-full border-4 border-blue-400 border-t-transparent transition-all duration-1000 ease-linear"
@@ -533,10 +551,11 @@ const GuitarPracticeApp = () => {
 
                 {/* Action Buttons */}
                 {awaitingUserResponse && (
-                  <div className="flex gap-3 mb-4">
+                  <div className="flex gap-3 mb-4" role="group" aria-label="Response options">
                     <button
                       onClick={handleCorrect}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      aria-label="I found the correct note on the fretboard"
                     >
                       <CheckCircle size={20} />
                       Got it!
@@ -544,6 +563,7 @@ const GuitarPracticeApp = () => {
                     <button
                       onClick={handleIncorrect}
                       className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      aria-label="I couldn't find the note"
                     >
                       <XCircle size={20} />
                       Missed it
@@ -553,9 +573,9 @@ const GuitarPracticeApp = () => {
 
                 {/* Show Answer */}
                 {(showAnswer || timeLeft === 0) && (
-                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                  <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4" role="region" aria-labelledby="answer-reveal">
                     <div className="text-center text-white">
-                      <div className="text-lg font-semibold mb-2">Answer:</div>
+                      <div id="answer-reveal" className="text-lg font-semibold mb-2">Fretboard Answer:</div>
                       <div className="text-2xl font-bold">
                         {currentNote} is at fret {currentFret} on the {stringNames[currentString]}
                       </div>
@@ -568,7 +588,11 @@ const GuitarPracticeApp = () => {
               </>
             ) : (
               <div className="text-center">
-                <div className="text-white/60 mb-4">Ready to practice?</div>
+                <div className="text-white/60 mb-4">Ready to practice guitar fretboard?</div>
+                <p className="text-white/50 text-sm mb-4">
+                  Practice finding notes on your guitar fretboard with timed challenges. 
+                  Perfect for beginners learning note positions and advanced players looking for fun challenges.
+                </p>
               </div>
             )}
 
@@ -576,15 +600,13 @@ const GuitarPracticeApp = () => {
             <div className="flex gap-3">
               <button
                 onClick={async () => {
-                  if (isGeneratingChallenge) return; // Prevent during transition
+                  if (isGeneratingChallenge) return;
                   
-                  // Clear any pending timeouts
                   if (nextChallengeTimeoutRef.current) {
                     clearTimeout(nextChallengeTimeoutRef.current);
                     setIsGeneratingChallenge(false);
                   }
                   
-                  // Trigger audio initialization on first user interaction
                   if (audioEnabled && !audioInitialized) {
                     await initializeAudio();
                   }
@@ -592,6 +614,7 @@ const GuitarPracticeApp = () => {
                 }}
                 disabled={selectedStrings.length === 0 || isGeneratingChallenge}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                aria-label={currentNote ? 'Generate next guitar note challenge' : 'Start guitar fretboard practice'}
               >
                 <Play size={20} />
                 {isGeneratingChallenge ? 'Loading...' : (currentNote ? 'Next Note' : 'Start Practice')}
@@ -605,6 +628,7 @@ const GuitarPracticeApp = () => {
                     setAwaitingUserResponse(true);
                   }}
                   className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                  aria-label="Show the correct fretboard position"
                 >
                   Show Answer
                 </button>
@@ -614,23 +638,25 @@ const GuitarPracticeApp = () => {
                 <button
                   onClick={endGame}
                   className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                  aria-label="End current practice session"
                 >
-                  End Game
+                  End Session
                 </button>
               )}
             </div>
 
             {selectedStrings.length === 0 && (
-              <div className="text-center text-red-300 text-sm mt-3">
-                Please select at least one string to practice
+              <div className="text-center text-red-300 text-sm mt-3" role="alert">
+                Please select at least one guitar string to practice
               </div>
             )}
-          </div>
+          </main>
         )}
 
         {/* Quick Stats */}
         {score.total > 0 && (
-          <div className="mt-6 grid grid-cols-3 gap-4">
+          <section className="mt-6 grid grid-cols-3 gap-4" aria-labelledby="practice-stats">
+            <h3 id="practice-stats" className="sr-only">Practice Statistics</h3>
             <div className="bg-black/30 backdrop-blur-md rounded-lg p-3 text-center border border-white/20">
               <div className="text-2xl font-bold text-green-400">{score.correct}</div>
               <div className="text-xs text-white/60">Correct</div>
@@ -643,32 +669,40 @@ const GuitarPracticeApp = () => {
               <div className="text-2xl font-bold text-purple-400">{getAccuracy()}%</div>
               <div className="text-xs text-white/60">Accuracy</div>
             </div>
-          </div>
+          </section>
         )}
 
         {/* Tips */}
-        <div className="mt-6 bg-black/20 backdrop-blur-md rounded-lg p-4 border border-white/10">
-          <h3 className="text-white font-semibold mb-2">💡 Practice Tips</h3>
+        <section className="mt-6 bg-black/20 backdrop-blur-md rounded-lg p-4 border border-white/10" aria-labelledby="practice-tips">
+          <h3 id="practice-tips" className="text-white font-semibold mb-2">💡 Guitar Fretboard Practice Tips</h3>
           <ul className="text-white/70 text-sm space-y-1">
-            <li>• Start with beginner mode to learn note positions</li>
-            <li>• Focus on one or two strings at first</li>
-            <li>• Use a metronome while practicing</li>
-            <li>• Try to visualize the fretboard in your mind</li>
-            <li>• Practice regularly for better muscle memory</li>
+            <li>• Start with beginner mode to learn basic guitar note positions</li>
+            <li>• Focus on one or two strings at first for better fretboard memorization</li>
+            <li>• Use a metronome while practicing guitar for better timing</li>
+            <li>• Try to visualize the guitar fretboard in your mind</li>
+            <li>• Practice guitar fretboard regularly for better muscle memory</li>
+            <li>• Use audio mode for ear training and note recognition</li>
           </ul>
-        </div>
+        </section>
 
         {/* Contact/Feedback Button */}
-        <div className="mt-6 text-center">
+        <footer className="mt-6 text-center">
           <a
             href="https://sharmatushar1.com/contact"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+            aria-label="Send feedback about the guitar practice app"
           >
             💬 Suggestions or Feedback?
           </a>
-        </div>
+          <p className="text-white/40 text-xs mt-2">
+            Free guitar fretboard practice app
+          </p>
+          <p className="text-white/30 text-xs mt-1">
+            © {new Date().getFullYear()} Tushar Sharma
+          </p>
+        </footer>
       </div>
       <Analytics />
     </div>
