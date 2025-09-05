@@ -13,6 +13,7 @@ const GuitarPracticeApp = () => {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [difficulty, setDifficulty] = useState('beginner');
   const [showSettings, setShowSettings] = useState(false);
+  const [awaitingUserResponse, setAwaitingUserResponse] = useState(false);
   const timerRef = useRef(null);
 
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -86,6 +87,7 @@ const GuitarPracticeApp = () => {
     setCurrentString(randomString);
     setCurrentFret(randomPosition.fret);
     setShowAnswer(false);
+    setAwaitingUserResponse(false);
     setTimeLeft(difficultySettings[difficulty].time);
     setIsActive(true);
   };
@@ -101,12 +103,14 @@ const GuitarPracticeApp = () => {
   const handleCorrect = () => {
     setScore(prev => ({ correct: prev.correct + 1, total: prev.total + 1 }));
     setIsActive(false);
+    setAwaitingUserResponse(false);
     setTimeout(() => generateChallenge(), 1500);
   };
 
   const handleIncorrect = () => {
     setScore(prev => ({ correct: prev.correct, total: prev.total + 1 }));
     setIsActive(false);
+    setAwaitingUserResponse(false);
     setTimeout(() => generateChallenge(), 1500);
   };
 
@@ -118,6 +122,7 @@ const GuitarPracticeApp = () => {
     } else if (timeLeft === 0 && isActive) {
       setIsActive(false);
       setShowAnswer(true);
+      setAwaitingUserResponse(true);
     }
 
     return () => {
@@ -238,7 +243,7 @@ const GuitarPracticeApp = () => {
               </div>
 
               {/* Action Buttons */}
-              {!showAnswer && timeLeft === 0 && (
+              {awaitingUserResponse && (
                 <div className="flex gap-3 mb-4">
                   <button
                     onClick={handleCorrect}
