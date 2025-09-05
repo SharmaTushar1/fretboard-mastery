@@ -88,10 +88,13 @@ const GuitarPracticeApp = () => {
           }
         }).toDestination();
         setAudioInitialized(true);
+        return true; // Return success status
       } catch (error) {
         console.error('Failed to initialize audio:', error);
+        return false;
       }
     }
+    return audioInitialized; // Return current state if already initialized
   };
 
   const getNoteFrequency = (note, octave = 4) => {
@@ -132,25 +135,35 @@ const GuitarPracticeApp = () => {
 
   const playNote = async (note, string, fret) => {
     if (!audioEnabled) return;
-    
-    await initializeAudio();
-    
-    if (synthRef.current && audioInitialized) {
-      try {
+
+    try {
+      // Ensure audio is initialized and wait for it to complete
+      let isAudioReady = audioInitialized;
+      if (!isAudioReady) {
+        isAudioReady = await initializeAudio();
+      }
+      
+      if (synthRef.current && isAudioReady) {
         const octave = getGuitarOctave(string, fret);
         const frequency = getNoteFrequency(note, octave);
         
         const noteWithOctave = `${note}${octave}`;
         
         synthRef.current.triggerAttackRelease(noteWithOctave, "0.8n");
-      } catch (error) {
-        console.error('Failed to play note:', error);
       }
+    } catch (error) {
+      console.error('Failed to play note:', error);
     }
   };
 
-  const generateChallenge = () => {
+  const generateChallenge = async () => {
     if (selectedStrings.length === 0) return;
+    
+    // Initialize audio with user interaction if not already done
+    let isAudioReady = audioInitialized;
+    if (audioEnabled && !isAudioReady) {
+      isAudioReady = await initializeAudio();
+    }
     
     if (gameState === 'idle') {
       setGameState('playing');
@@ -180,14 +193,24 @@ const GuitarPracticeApp = () => {
     setTimeLeft(difficultySettings[difficulty].time);
     setIsActive(true);
 
-    setTimeout(() => {
-      playNote(randomNote, randomString, randomPosition.fret);
-    }, 500);
+    // Play the note after a delay, using the audio ready status
+    if (audioEnabled && isAudioReady) {
+      setTimeout(async () => {
+        await playNote(randomNote, randomString, randomPosition.fret);
+      }, 800);
+    }
   };
 
-  const replayCurrentNote = () => {
+  const replayCurrentNote = async () => {
     if (currentNote && currentString !== '' && currentFret !== '') {
-      playNote(currentNote, currentString, currentFret);
+      // Ensure audio is ready before replaying
+      let isAudioReady = audioInitialized;
+      if (audioEnabled && !isAudioReady) {
+        isAudioReady = await initializeAudio();
+      }
+      if (isAudioReady) {
+        await playNote(currentNote, currentString, currentFret);
+      }
     }
   };
 
@@ -505,7 +528,13 @@ const GuitarPracticeApp = () => {
             {/* Control Buttons */}
             <div className="flex gap-3">
               <button
-                onClick={generateChallenge}
+                onClick={async () => {
+                  // Trigger audio initialization on first user interaction
+                  if (audioEnabled && !audioInitialized) {
+                    await initializeAudio();
+                  }
+                  generateChallenge();
+                }}
                 disabled={selectedStrings.length === 0}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
